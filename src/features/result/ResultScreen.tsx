@@ -3,6 +3,9 @@ import { formatYen } from '../../lib/format';
 import type { EducationResult } from '../../schema/types';
 import type { InputState } from '../../lib/inputDefaults';
 import { PeakHero } from './PeakHero';
+import { IncludedCostsCard } from './IncludedCostsCard';
+import { CostBreakdown } from './CostBreakdown';
+import { ExcludedCostsDetails } from './ExcludedCostsDetails';
 import { ChildPeaks } from './ChildPeaks';
 import { YearlyChart } from './YearlyChart';
 import { OverlapNote } from './OverlapNote';
@@ -38,6 +41,10 @@ export function ResultScreen({
         {hasAway && <p className="note">{t.total.awayBadge}</p>}
         <p className="note">{t.total.note}</p>
       </section>
+
+      <IncludedCostsCard result={result} />
+      <CostBreakdown result={result} />
+      <ExcludedCostsDetails />
 
       <ChildPeaks result={result} />
       <YearlyChart result={result} />

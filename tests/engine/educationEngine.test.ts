@@ -171,6 +171,42 @@ describe('runEducation', () => {
     expect(Array.isArray(r.family)).toBe(true);
   });
 
+  it('内訳3カテゴリの合計が totalFutureCostYen と一致する', () => {
+    const r = runEducation(
+      input([
+        child({ id: 'a', currentAge: 6, universityPlan: 'private', livingArrangement: 'away' }),
+        child({ id: 'b', currentAge: 13, juniorHighHighSchoolPlan: 'privateIntegrated', universityPlan: 'nationalPublic', livingArrangement: 'home' }),
+      ]),
+    );
+    const { k12Yen, universityYen, awayExtraYen } = r.breakdown;
+    expect(k12Yen + universityYen + awayExtraYen).toBe(r.totalFutureCostYen);
+  });
+
+  it('下宿なしでは内訳の自宅外通学による追加生活費が 0', () => {
+    const r = runEducation(
+      input([child({ currentAge: 18, universityPlan: 'private', livingArrangement: 'home' })]),
+    );
+    expect(r.breakdown.awayExtraYen).toBe(0);
+    expect(r.breakdown.universityYen).toBeGreaterThan(0);
+    // 合計一致も維持。
+    expect(
+      r.breakdown.k12Yen + r.breakdown.universityYen + r.breakdown.awayExtraYen,
+    ).toBe(r.totalFutureCostYen);
+  });
+
+  it('下宿ありでは追加生活費が内訳に現れ、総額と整合する', () => {
+    const r = runEducation(
+      input([child({ currentAge: 18, universityPlan: 'private', livingArrangement: 'away' })]),
+    );
+    // 4 年分の追加生活費。
+    expect(r.breakdown.awayExtraYen).toBe(
+      UNIVERSITY_AWAY_LIVING_EXTRA_YEN.annualExtraYen * 4,
+    );
+    expect(
+      r.breakdown.k12Yen + r.breakdown.universityYen + r.breakdown.awayExtraYen,
+    ).toBe(r.totalFutureCostYen);
+  });
+
   it('複数子のとき重なりやすい時期が算出される（単数子では null）', () => {
     const single = runEducation(input([child({ currentAge: 18, universityPlan: 'private' })]));
     expect(single.overlap).toBeNull();

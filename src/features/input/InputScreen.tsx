@@ -74,6 +74,12 @@ export function InputScreen({
           <p className="note">{t.ageNote}</p>
         </div>
 
+        {/* 大学・通学形態の選択前に、何を含む試算かを短く補足する。 */}
+        <p className="note scope-note">
+          {t.costScopeNote}
+          <span className="scope-note__detail">{t.costScopeDetail}</span>
+        </p>
+
         {input.children.map((child, idx) => (
           <ChildCard
             key={child.id}
