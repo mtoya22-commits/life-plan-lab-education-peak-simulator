@@ -20,15 +20,22 @@ export function ResultScreen({
   result: EducationResult;
   onBack: () => void;
 }) {
+  // 下宿・一人暮らしの子がいると、総額に自宅外通学の追加生活費が含まれる。
+  const hasAway = input.children.some(
+    (c) => c.universityPlan !== 'none' && c.livingArrangement === 'away',
+  );
+  const totalTitle = hasAway ? t.total.titleWithAway : t.total.title;
+
   return (
     <div className="screen screen--result">
       <PeakHero result={result} />
 
       <section className="card">
-        <h2 className="section-heading">{t.total.title}</h2>
-        <p className="big-figure" aria-label={`${t.total.title} ${formatYen(result.totalFutureCostYen)}円`}>
+        <h2 className="section-heading">{totalTitle}</h2>
+        <p className="big-figure" aria-label={`${totalTitle} ${formatYen(result.totalFutureCostYen)}円`}>
           {formatYen(result.totalFutureCostYen)}円
         </p>
+        {hasAway && <p className="note">{t.total.awayBadge}</p>}
         <p className="note">{t.total.note}</p>
       </section>
 

@@ -6,7 +6,7 @@ import {
   ANNUAL_LEARNING_COST_YEN,
   NATIONAL_UNIVERSITY_YEN,
   PRIVATE_UNIVERSITY_YEN,
-  UNIVERSITY_AWAY_EXTRA_YEN,
+  UNIVERSITY_AWAY_LIVING_EXTRA_YEN,
   CHILD_AGE_MIN,
   CHILD_AGE_MAX,
   PARENT_AGE_MIN,
@@ -86,10 +86,11 @@ function baseAnnualCost(stage: EducationStage): number {
     case 'highSchoolPrivate':
       return ANNUAL_LEARNING_COST_YEN.privateHighSchool;
     case 'universityNational':
-      return NATIONAL_UNIVERSITY_YEN.annualTuition;
+      // 2〜4年目総額。入学年は firstYearTotalYen で上書きする（buildChildYearly 参照）。
+      return NATIONAL_UNIVERSITY_YEN.subsequentYearTotalYen;
     case 'universityPrivate':
-      // 2〜4年目の年額（授業料＋施設設備費）。初年度は別途一時費用を上乗せ。
-      return PRIVATE_UNIVERSITY_YEN.subsequentYearTotal;
+      // 2〜4年目総額。入学年は firstYearTotalYen で上書きする（buildChildYearly 参照）。
+      return PRIVATE_UNIVERSITY_YEN.subsequentYearTotalYen;
     case 'none':
     default:
       return 0;
@@ -126,19 +127,19 @@ function buildChildYearly(
       age <= AGE.universityEnd
     ) {
       stage = university === 'private' ? 'universityPrivate' : 'universityNational';
-      cost = baseAnnualCost(stage);
-      // 大学入学年（universityStart）に入学時一時費用を上乗せ。
+      // 入学年(18歳)は firstYearTotalYen（入学料等を内包）。2〜4年目は subsequentYearTotalYen。
+      // 入学時費用は初年度総額に内包済みのため、別途上乗せしない。
       if (age === AGE.universityStart) {
-        if (university === 'private') {
-          // 私立は初年度納付金合計（授業料＋入学料＋施設設備費）を直接用いる。
-          cost = PRIVATE_UNIVERSITY_YEN.firstYearTotal;
-        } else {
-          cost += NATIONAL_UNIVERSITY_YEN.admissionFee;
-        }
+        cost =
+          university === 'private'
+            ? PRIVATE_UNIVERSITY_YEN.firstYearTotalYen
+            : NATIONAL_UNIVERSITY_YEN.firstYearTotalYen;
+      } else {
+        cost = baseAnnualCost(stage);
       }
-      // 下宿は在学中のみ、自宅外通学による追加費用（住居・光熱費相当）を上乗せ。
+      // 下宿・一人暮らしのときのみ、自宅外通学による追加生活費を在学中の各年に上乗せ。
       if (away) {
-        cost += UNIVERSITY_AWAY_EXTRA_YEN.annualHousingUtilities;
+        cost += UNIVERSITY_AWAY_LIVING_EXTRA_YEN.annualExtraYen;
       }
     }
 
