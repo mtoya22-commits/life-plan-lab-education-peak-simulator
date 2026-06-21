@@ -74,3 +74,72 @@ describe('ResultScreen（子2人・重なり・反映）', () => {
     expect(screen.getByText('生活設計に反映する教育費条件として保存しました')).toBeTruthy();
   });
 });
+
+describe('ResultScreen（含む費用の説明UI・内訳・見出し）', () => {
+  function build(livingArrangement: 'home' | 'away') {
+    const input: InputState = {
+      parentAge: 45,
+      baselineYear: 2026,
+      children: [
+        {
+          id: 'a',
+          currentAge: 16,
+          juniorHighHighSchoolPlan: 'public',
+          universityPlan: 'private',
+          livingArrangement,
+        },
+      ],
+    };
+    const result = runEducation({
+      parentAge: input.parentAge!,
+      baselineYear: input.baselineYear,
+      children: input.children,
+    });
+    return { input, result };
+  }
+
+  it('「この試算に含まれる主な費用」カードと「含まれにくい費用」折りたたみが表示される', () => {
+    const { input, result } = build('home');
+    render(<ResultScreen input={input} result={result} onBack={() => {}} />);
+    expect(screen.getByText('この試算に含まれる主な費用')).toBeTruthy();
+    expect(screen.getByText('含まれにくい費用・家庭差が大きい費用')).toBeTruthy();
+    // 大学自宅通学の注意書き（予備校代等は含まない）が出る。
+    expect(
+      screen.getByText(/大学受験のための予備校代/),
+    ).toBeTruthy();
+  });
+
+  it('総額見出し：下宿なしは「教育費総額」、下宿ありは「教育関連費総額」', () => {
+    const home = build('home');
+    const { unmount } = render(
+      <ResultScreen input={home.input} result={home.result} onBack={() => {}} />,
+    );
+    expect(screen.getByText('今後の教育費総額（概算）')).toBeTruthy();
+    expect(screen.queryByText('今後の教育関連費総額（概算）')).toBeNull();
+    unmount();
+
+    const away = build('away');
+    render(
+      <ResultScreen input={away.input} result={away.result} onBack={() => {}} />,
+    );
+    expect(screen.getByText('今後の教育関連費総額（概算）')).toBeTruthy();
+  });
+
+  it('内訳：下宿なしは「自宅外通学による追加生活費」を表示しない／下宿ありは表示する', () => {
+    const home = build('home');
+    const { unmount } = render(
+      <ResultScreen input={home.input} result={home.result} onBack={() => {}} />,
+    );
+    expect(screen.getByText('教育関連費の内訳')).toBeTruthy();
+    expect(screen.getByText('大学の納付金')).toBeTruthy();
+    expect(screen.queryByText('自宅外通学による追加生活費')).toBeNull();
+    unmount();
+
+    const away = build('away');
+    render(
+      <ResultScreen input={away.input} result={away.result} onBack={() => {}} />,
+    );
+    // 内訳カテゴリとして表示される（複数箇所に出るため getAllByText）。
+    expect(screen.getAllByText('自宅外通学による追加生活費').length).toBeGreaterThan(0);
+  });
+});

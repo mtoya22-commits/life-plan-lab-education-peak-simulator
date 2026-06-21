@@ -114,6 +114,7 @@ function buildChildYearly(
     const year = baselineYear + offset;
     let stage: EducationStage = 'none';
     let cost = 0;
+    let awayExtra = 0;
 
     if (age >= AGE.elementaryStart && age <= AGE.elementaryEnd) {
       stage = 'elementary';
@@ -139,13 +140,53 @@ function buildChildYearly(
       }
       // 下宿・一人暮らしのときのみ、自宅外通学による追加生活費を在学中の各年に上乗せ。
       if (away) {
-        cost += UNIVERSITY_AWAY_LIVING_EXTRA_YEN.annualExtraYen;
+        awayExtra = UNIVERSITY_AWAY_LIVING_EXTRA_YEN.annualExtraYen;
+        cost += awayExtra;
       }
     }
 
-    rows.push({ year, age, stage, costYen: cost });
+    rows.push({ year, age, stage, costYen: cost, awayExtraYen: awayExtra });
   }
   return rows;
+}
+
+// 教育段階が小学校〜高校（k12）かどうか。
+function isK12Stage(stage: EducationStage): boolean {
+  return (
+    stage === 'elementary' ||
+    stage === 'juniorHigh' ||
+    stage === 'juniorHighPrivate' ||
+    stage === 'highSchool' ||
+    stage === 'highSchoolPrivate'
+  );
+}
+
+// 年次計算結果から構成内訳を純粋集計する。
+// k12Yen + universityYen + awayExtraYen === totalFutureCostYen が必ず成立する。
+function computeBreakdown(children: ChildResult[]): {
+  k12Yen: number;
+  universityYen: number;
+  awayExtraYen: number;
+} {
+  let k12Yen = 0;
+  let universityYen = 0;
+  let awayExtraYen = 0;
+  for (const c of children) {
+    for (const row of c.yearly) {
+      if (row.costYen <= 0) continue;
+      if (isK12Stage(row.stage)) {
+        k12Yen += row.costYen;
+      } else if (
+        row.stage === 'universityNational' ||
+        row.stage === 'universityPrivate'
+      ) {
+        // 大学年の costYen には自宅外通学の追加生活費が含まれるため分離する。
+        universityYen += row.costYen - row.awayExtraYen;
+        awayExtraYen += row.awayExtraYen;
+      }
+    }
+  }
+  return { k12Yen, universityYen, awayExtraYen };
 }
 
 function summarizeChild(
@@ -280,6 +321,7 @@ export function runEducation(input: EducationInput): EducationResult {
   }
 
   const overlap = findOverlap(family, childResults.length);
+  const breakdown = computeBreakdown(childResults);
 
   return {
     baselineYear,
@@ -287,6 +329,7 @@ export function runEducation(input: EducationInput): EducationResult {
     children: childResults,
     family,
     totalFutureCostYen,
+    breakdown,
     peak,
     overlap,
   };

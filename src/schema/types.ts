@@ -77,7 +77,10 @@ export type ChildYearCost = {
   year: number;
   age: number;
   stage: EducationStage;
-  costYen: number; // 入学時一時費用・下宿追加を含む年額
+  costYen: number; // 年額の合計（学費＋自宅外通学による追加生活費を含む）
+  // costYen のうち「自宅外通学による追加生活費」分（自宅通学・非大学年は 0）。
+  // 内訳集計で「大学の納付金」と「自宅外通学による追加生活費」を分離するために保持する。
+  awayExtraYen: number;
 };
 
 export type ChildResult = {
@@ -106,12 +109,21 @@ export type OverlapPeriod = {
   endYear: number;
 };
 
+// 教育関連費の構成内訳。年次計算結果からの純粋集計で、
+// k12Yen + universityYen + awayExtraYen === totalFutureCostYen が常に成立する。
+export type EducationBreakdown = {
+  k12Yen: number; // 小学校〜高校の学習費
+  universityYen: number; // 大学の納付金（自宅外通学の追加生活費を除く）
+  awayExtraYen: number; // 自宅外通学による追加生活費
+};
+
 export type EducationResult = {
   baselineYear: number;
   parentAge: number;
   children: ChildResult[];
   family: FamilyYearCost[];
   totalFutureCostYen: number;
+  breakdown: EducationBreakdown;
   peak: {
     year: number;
     offset: number;
