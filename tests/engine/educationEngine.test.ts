@@ -4,7 +4,7 @@ import {
   ANNUAL_LEARNING_COST_YEN,
   NATIONAL_UNIVERSITY_YEN,
   PRIVATE_UNIVERSITY_YEN,
-  UNIVERSITY_AWAY_EXTRA_YEN,
+  UNIVERSITY_AWAY_LIVING_EXTRA_YEN,
   AGE,
 } from '../../src/lib/educationAssumptions';
 import type { ChildInput, EducationInput } from '../../src/schema/types';
@@ -41,35 +41,37 @@ describe('runEducation', () => {
     expect(c.yearly.some((y) => y.stage.startsWith('university'))).toBe(false);
   });
 
-  it('子1人・国公立大学・自宅通学：入学年に入学料が加算される', () => {
+  it('子1人・国公立大学・自宅通学：初年度総額（入学料内包）、入学料を別途加算しない', () => {
     const r = runEducation(
       input([child({ currentAge: 18, universityPlan: 'nationalPublic', livingArrangement: 'home' })]),
     );
     const c = r.children[0];
     const firstYear = c.yearly.find((y) => y.age === AGE.universityStart)!;
-    expect(firstYear.costYen).toBe(
-      NATIONAL_UNIVERSITY_YEN.annualTuition + NATIONAL_UNIVERSITY_YEN.admissionFee,
-    );
-    // 4年分の授業料 + 入学料。
+    // 初年度総額（817,800）。入学料は初年度総額に内包済みで別途加算しない。
+    expect(firstYear.costYen).toBe(NATIONAL_UNIVERSITY_YEN.firstYearTotalYen);
+    const secondYear = c.yearly.find((y) => y.age === AGE.universityStart + 1)!;
+    expect(secondYear.costYen).toBe(NATIONAL_UNIVERSITY_YEN.subsequentYearTotalYen);
+    // 初年度総額 + 2〜4年目総額×3。
     const expectedTotal =
-      NATIONAL_UNIVERSITY_YEN.annualTuition * 4 + NATIONAL_UNIVERSITY_YEN.admissionFee;
+      NATIONAL_UNIVERSITY_YEN.firstYearTotalYen +
+      NATIONAL_UNIVERSITY_YEN.subsequentYearTotalYen * 3;
     expect(c.totalFutureCostYen).toBe(expectedTotal);
   });
 
-  it('子1人・私立大学・下宿：初年度納付金と下宿追加が反映される', () => {
+  it('子1人・私立大学・下宿：初年度総額と自宅外通学による追加生活費が反映される', () => {
     const r = runEducation(
       input([child({ currentAge: 18, universityPlan: 'private', livingArrangement: 'away' })]),
     );
     const c = r.children[0];
     const firstYear = c.yearly.find((y) => y.age === AGE.universityStart)!;
     expect(firstYear.costYen).toBe(
-      PRIVATE_UNIVERSITY_YEN.firstYearTotal +
-        UNIVERSITY_AWAY_EXTRA_YEN.annualHousingUtilities,
+      PRIVATE_UNIVERSITY_YEN.firstYearTotalYen +
+        UNIVERSITY_AWAY_LIVING_EXTRA_YEN.annualExtraYen,
     );
     const secondYear = c.yearly.find((y) => y.age === AGE.universityStart + 1)!;
     expect(secondYear.costYen).toBe(
-      PRIVATE_UNIVERSITY_YEN.subsequentYearTotal +
-        UNIVERSITY_AWAY_EXTRA_YEN.annualHousingUtilities,
+      PRIVATE_UNIVERSITY_YEN.subsequentYearTotalYen +
+        UNIVERSITY_AWAY_LIVING_EXTRA_YEN.annualExtraYen,
     );
   });
 
@@ -108,7 +110,7 @@ describe('runEducation', () => {
     const baseYearRow = r.family.find((f) => f.year === BASE)!;
     expect(baseYearRow.byChild.filter((c) => c.costYen > 0).length).toBe(2);
     expect(baseYearRow.totalYen).toBe(
-      PRIVATE_UNIVERSITY_YEN.firstYearTotal + ANNUAL_LEARNING_COST_YEN.publicHighSchool,
+      PRIVATE_UNIVERSITY_YEN.firstYearTotalYen + ANNUAL_LEARNING_COST_YEN.publicHighSchool,
     );
   });
 

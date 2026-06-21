@@ -12,6 +12,7 @@ export function AssumptionsDetails() {
           <li>{t.model}</li>
           <li>{t.universityFirstYear}</li>
           <li>{t.away}</li>
+          <li>{t.awayInTotal}</li>
           <li>{t.excluded}</li>
           <li>{t.variance}</li>
         </ul>
