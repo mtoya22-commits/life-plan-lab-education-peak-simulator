@@ -60,18 +60,20 @@ describe('ResultScreen（子2人・重なり・反映）', () => {
     expect(screen.getByText('教育費が重なりやすい時期')).toBeTruthy();
   });
 
-  it('反映ボタンで lifePlanLab:education に確定保存され、保存前は空', () => {
+  it('保存ボタンで lifePlanLab:education に確定保存され、保存前は空', () => {
     expect(window.localStorage.getItem(PAYLOAD_KEY)).toBeNull();
     render(<ResultScreen input={input} result={result} onBack={() => {}} />);
     fireEvent.click(
-      screen.getByText('この教育費条件を生活設計に反映する'),
+      screen.getByText('この教育費条件を保存する'),
     );
     const payload = loadPayload()!;
     expect(payload).not.toBeNull();
     expect(payload.source).toBe('currentPlan');
     expect(payload.children.length).toBe(2);
     expect(payload.peakParentAge).toBe(payload.parentAge + payload.peakYearOffset);
-    expect(screen.getByText('生活設計に反映する教育費条件として保存しました')).toBeTruthy();
+    expect(
+      screen.getByText('教育費条件を保存しました。総合版への自動反映は準備中です。'),
+    ).toBeTruthy();
   });
 });
 
