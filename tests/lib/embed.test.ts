@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   EMBED_SOURCE,
   isEmbedded,
+  navigateTop,
   postEmbeddedHeight,
   postEmbeddedScrollTop,
   resetEmbedHeightState,
@@ -47,6 +48,36 @@ describe('embed（iframe 通信）', () => {
     expect(postSpy).toHaveBeenCalledTimes(1);
     postEmbeddedHeight(503); // 3px 差 → 送る
     expect(postSpy).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('navigateTop（総合版への遷移は最上位フレームで行う）', () => {
+  const originalTop = Object.getOwnPropertyDescriptor(window, 'top');
+
+  afterEach(() => {
+    if (originalTop) Object.defineProperty(window, 'top', originalTop);
+  });
+
+  it('iframe 埋め込み時は window.top を遷移させる（iframe 内に入れ子表示しない）', () => {
+    const fakeTop = { location: { href: 'about:blank' } };
+    Object.defineProperty(window, 'top', { value: fakeTop, configurable: true });
+
+    navigateTop('https://fire-lifeplan-lab.com/life-plan-simulator/?educationSource=currentPlan');
+
+    expect(fakeTop.location.href).toBe(
+      'https://fire-lifeplan-lab.com/life-plan-simulator/?educationSource=currentPlan',
+    );
+  });
+
+  it('window.top へのアクセスが例外を投げても落ちない（クロスオリジン相当）', () => {
+    Object.defineProperty(window, 'top', {
+      get() {
+        throw new Error('cross-origin');
+      },
+      configurable: true,
+    });
+    // フォールバック（自フレーム遷移）は jsdom では実ナビゲーションしないが、例外にはならない。
+    expect(() => navigateTop('https://example.org/')).not.toThrow();
   });
 });
 
