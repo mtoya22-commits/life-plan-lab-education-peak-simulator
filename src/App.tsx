@@ -50,8 +50,12 @@ export default function App() {
     return observeRootHeight(root);
   }, []);
 
-  // 画面遷移・再計算時に親ページへ先頭スクロールを依頼。
+  // 画面遷移・再計算時に先頭へ戻す。
+  // 埋め込み時: 親ページへ先頭スクロールを依頼（スクロールは親側にある）。
+  // 単独表示時: 自分の window と内側スクロールコンテナ（.step-content）をリセットする。
   useEffect(() => {
+    document.querySelector('.step-content')?.scrollTo?.({ top: 0, behavior: 'auto' });
+    window.scrollTo({ top: 0, behavior: 'auto' });
     postEmbeddedScrollTop();
   }, [phase]);
 
