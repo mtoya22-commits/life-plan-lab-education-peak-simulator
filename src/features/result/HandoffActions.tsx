@@ -3,6 +3,7 @@ import { ja } from '../../strings/ja';
 import { savePayload } from '../../lib/storage';
 import { buildEducationPayload } from '../../lib/buildPayload';
 import { buildMainSimulatorUrl } from '../../lib/handoffUrl';
+import { navigateTop } from '../../lib/embed';
 import type { EducationResult } from '../../schema/types';
 import type { InputState } from '../../lib/inputDefaults';
 
@@ -30,9 +31,11 @@ export function HandoffActions({
 
   function onGoto() {
     // URL 付与だけでなく、必ず確定保存してから遷移する。
+    // iframe 埋め込み時に総合版の親ページが iframe 内へ入れ子表示されないよう、
+    // window.location ではなく最上位フレーム（navigateTop）で遷移する。
     persist();
     setReflected(true);
-    window.location.href = buildMainSimulatorUrl('currentPlan');
+    navigateTop(buildMainSimulatorUrl('currentPlan'));
   }
 
   return (

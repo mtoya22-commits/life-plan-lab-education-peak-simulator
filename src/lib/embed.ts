@@ -53,6 +53,28 @@ export function postEmbeddedScrollTop(): void {
   postToParent({ type: 'lifeplanlab:scrollTop', source: EMBED_SOURCE });
 }
 
+/**
+ * ブラウザ最上位（親ページ）で URL へ遷移する。
+ * WordPress iframe 埋め込み時に window.location.href で遷移すると、総合版の親ページが
+ * この iframe の中に入れ子表示されてしまうため、必ず window.top を遷移させる。
+ * クロスオリジンでも location.href への代入は許可される（読み取りは不可）。
+ * top にアクセスできない場合は自フレームで遷移する。スタンドアロンでは通常遷移と同じ。
+ * （生活費見直しシミュレーターの navigateTop と同じ作法）
+ */
+export function navigateTop(url: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const top = window.top;
+    if (top) {
+      top.location.href = url;
+      return;
+    }
+  } catch {
+    // 取得不可時は下のフォールバックへ。
+  }
+  window.location.href = url;
+}
+
 // #root の高さ変化を監視して親へ通知する。返り値で監視を停止できる。
 export function observeRootHeight(target: HTMLElement): () => void {
   if (typeof ResizeObserver === 'undefined') {
